@@ -13,17 +13,22 @@ genetic-maze-solver/
 │   ├── environment.py    # Maze definition and BFS distance utility
 │   ├── population.py     # Selection, crossover, mutation
 │   └── main.py           # Pygame visualization and main loop
+├── v2_neuroevolution/
+│   ├── agent.py          # Agent with neural network brain
+│   ├── environment.py    # Maze definition and BFS distance utility
+│   ├── neural_network.py # Feedforward neural network (ReLU, He init)
+│   ├── population.py     # Selection, crossover, mutation over NN weights
+│   └── main.py           # Pygame visualization and main loop
 └── README.md
 ```
-
 ---
 
 ## ️ Project Roadmap
 
-| Version | Approach | Status |
-|---------|----------|--------|
-| v1 | Pure Genetic Algorithm | ✅ Complete |
-| v2 | Neuroevolution (GA-evolved neural networks) | 🔜 Coming Soon |
+| Version | Approach | Status    |
+|---------|----------|-----------|
+| v1 | Pure Genetic Algorithm | Complete  |
+| v2 | Neuroevolution (GA-evolved neural networks) | Complete  |
 
 ---
 
@@ -58,7 +63,54 @@ Agents carry a fixed-length DNA sequence of movement directions. Over generation
     cd v1_pure_genetic
     python main.py
 ```
+## v2 — Neuroevolution (Coming Soon)
 
+Instead of a fixed movement sequence, each agent has a small feedforward neural network that decides the next move based on observations of the environment. The genetic algorithm evolves the network weights directly — no backpropagation.
+
+### Architecture
+ 
+```
+Input (8)  →  Hidden (16, ReLU)  →  Output (4)
+```
+
+| Input | Description |
+|-------|-------------|
+| 4 values | Distance to nearest wall in each direction (normalized) |
+| 1 value | BFS distance to goal (normalized by rows + cols) |
+| 2 values | Relative position to goal (row, col) |
+| 1 value | Visit count of current cell (loop awareness) |
+
+
+### Algorithm Details
+ 
+| Parameter | Value                                           |
+|-----------|-------------------------------------------------|
+| Population size | 500 agents                                      |
+| Max steps per generation | 100                                             |
+| Selection | Roulette wheel (fitness-proportional)           |
+| Crossover | Uniform over flattened weight vector            |
+| Mutation | Gaussian noise (σ = 0.5), rate = 10%            |
+| Elitism | Best agent's weights preserved each generation  |
+| Fitness | Same BFS-based function as v1 + revisit penalty |
+ 
+
+### Fitness Function
+ 
+- Same BFS-based distance reward as v1
+- Goal bonus: `1000 + (move_limit - move_count) × 20`
+- Collision penalty: `-0.0001` per wall hit
+- Revisit penalty: `-0.005` per extra visit to already-seen cells (prevents looping)
+- Minimum fitness clamped to `0.01`
+
+### Setup & Run
+ 
+```bash
+pip install numpy pygame
+cd v2_neuroevolution
+python main.py
+```
+
+---
 ### Controls
 
 | Key | Action |
@@ -75,20 +127,12 @@ Agents carry a fixed-length DNA sequence of movement directions. Over generation
 | Green | Start point |
 | Red | Goal point |
 
-The side panel shows real-time stats: generation number, alive agents, current step, best fitness score, and whether the goal has been reached.
-
 ---
 
-
-## v2 — Neuroevolution (Coming Soon)
-
-Instead of a fixed DNA sequence, agents will use a small neural network to decide their next move based on local environment observations. The genetic algorithm will evolve the network weights across generations.
-
----
 
 ## Maze
 
-The maze is a 15×15 grid hardcoded in `environment.py`. Cells:
+The maze is a 15×15 grid defined in `environment.py`. Cells:
 - `0` → Open path
 - `1` → Wall
 - `2` → Start (green)
@@ -97,3 +141,13 @@ The maze is a 15×15 grid hardcoded in `environment.py`. Cells:
 BFS distances are computed lazily and cached per `(start, goal)` pair to avoid redundant computation across the population.
 
 ---
+
+## v1 vs v2 Comparison
+ 
+| | v1 Genetic | v2 Neuroevolution |
+|-|------------|-------------------|
+| Decision making | Fixed DNA sequence | Neural network |
+| What evolves | Movement directions | Network weights |
+| Environment awareness | None | Yes (local observations) |
+| Loop handling | No | Yes (visit count input) |
+| Generalisation | Fixed path | Adaptive behaviour |
