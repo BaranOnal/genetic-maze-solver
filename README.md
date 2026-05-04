@@ -3,6 +3,15 @@
  A project exploring different AI approaches for solving a grid-based maze — evolving agents to reach the goal efficiently.
 
 ---
+ 
+## Demo
+ 
+### v1 — Pure Genetic Algorithm
+<img src="assets/v1.gif" width="600"/> 
+
+### v2 — Neuroevolution
+<img src="assets/v2.gif" width="600"/>
+---
 
 ##  Project Structure
 
